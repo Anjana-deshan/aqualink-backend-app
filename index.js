@@ -2,9 +2,12 @@ import express from "express";
 import mongoose from "mongoose";
 import userRouter from "./routes/userRouter.js";
 import jwt from "jsonwebtoken";
-
+import cors from "cors"
+import productRouter from "./routes/productRouter.js";
 
 const app = express()
+
+app.use(cors())
 
 app.use(express.json())
 
@@ -34,7 +37,7 @@ app.use(
     }    
 )
 
-const connectionString = ""
+const connectionString = "mongodb+srv://admin:123@cluster0.yg47z6r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 mongoose.connect(connectionString).then(
     ()=>{
@@ -47,7 +50,7 @@ mongoose.connect(connectionString).then(
 )
 
 app.use("/api/users", userRouter)
-
+app.use("/api/products", productRouter)
 
 app.listen(5000,
     ()=>{
