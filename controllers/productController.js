@@ -1,40 +1,30 @@
-import Product from "../Models/product.js"; // adjust path if needed
+import Product from "../Models/product.js";
 
 // CREATE a new product
 export const createProduct = async (req, res) => {
   try {
-    const { title, price, stock, image } = req.body;
-
-    // auto-set status based on stock
-    const status = stock > 0 ? "In Stock" : "Out of Stock";
+    const { productCode, title, price, image, fishCode } = req.body;
 
     const newProduct = new Product({
+      productCode,
       title,
       price,
-      stock,
-      status,
       image,
+      fishCode,
     });
 
-    const savedProduct = await newProduct.save().then(
-        ()=>{
-            res.json({
-                message: "Product added successfully"
-            })
-        }
-    )
+    await newProduct.save();
+
+    res.status(201).json({ message: "Product added successfully" });
   } catch (error) {
-    ()=>{
-            res.json({
-                message: "Failed to add Product"
-            })
-        }
+    res.status(500).json({ message: "Failed to add Product", error: error.message });
   }
 };
 
 // READ all products
 export const getAllProducts = async (req, res) => {
   try {
+    // Remove .populate("fishCode") since fishCode is a String, not ObjectId
     const products = await Product.find();
     res.status(200).json(products);
   } catch (error) {
@@ -42,10 +32,11 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-// READ single product by id
-export const getProductById = async (req, res) => {
+// READ single product by productCode
+export const getProductByCode = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const { productCode } = req.params;
+    const product = await Product.findOne({ productCode: productCode });
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json(product);
   } catch (error) {
@@ -53,19 +44,23 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// UPDATE product by id
+// UPDATE product by productCode
 export const updateProduct = async (req, res) => {
   try {
-    const { title, price, stock, image } = req.body;
+    const { productCode } = req.params;
+    const { title, price, image, fishCode } = req.body;
 
-    // auto-set status based on stock if stock is provided
-    const status = stock !== undefined ? (stock > 0 ? "In Stock" : "Out of Stock") : undefined;
+    const updatedData = { title, price, image, fishCode };
 
-    const updatedData = { title, price, stock, image };
-    if (status) updatedData.status = status;
+    const updatedProduct = await Product.findOneAndUpdate(
+      { productCode: productCode },
+      updatedData,
+      { new: true }
+    );
 
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updatedData, { new: true });
-    if (!updatedProduct) return res.status(404).json({ message: "Product not found" });
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     res.status(200).json(updatedProduct);
   } catch (error) {
@@ -73,10 +68,13 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// DELETE product by id
+// DELETE product by productCode
 export const deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    const { productCode } = req.params;
+    
+    const deletedProduct = await Product.findOneAndDelete({ productCode: productCode });
+    
     if (!deletedProduct) return res.status(404).json({ message: "Product not found" });
     res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
