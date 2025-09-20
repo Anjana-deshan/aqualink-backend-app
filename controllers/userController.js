@@ -31,24 +31,17 @@ export function createUser(req,res){
     )
 }
 
-export function loginUser(req,res){
 
-    User.findOne(
-        {
-            email : req.body.email
-        }
-    ).then(
-        (user)=>{
-            if(user==null){
-                res.status(404).json(
-                    {
-                        message: "User not Found"
-                    }
-                )
-            }else{
-                const isPasswordMatching = bcrypt.compareSync(req.body.password,user.password)
-                if(isPasswordMatching){
-
+export function loginUser(req, res) {
+    User.findOne({ email: req.body.email })
+        .then((user) => {
+            if (user == null) {
+                res.status(404).json({
+                    message: "User not Found"
+                })
+            } else {
+                const isPasswordMatching = bcrypt.compareSync(req.body.password, user.password)
+                if (isPasswordMatching) {
                     const token = jwt.sign(
                         {
                             email: user.email,
@@ -60,23 +53,27 @@ export function loginUser(req,res){
                         "jwt-secret-key"
                     )
 
-                    res.json(
-                        {
-                            message:"Login Successsfull",
-                            token:token,
-                            role:user.role
+                    res.json({
+                        message: "Login Successsfull",
+                        token: token,
+                        role: user.role,
+                        user: {
+                            email: user.email,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                            role: user.role,
+                            isEmailVerified: user.isEmailVerified,
+                            createdAt: user.createdAt,
+                            // Add any other fields you want to send
                         }
-                    )
-                }else{
-                    res.status(401).json(
-                        {
-                            message:"Login Faild"
-                        }
-                    )
+                    })
+                } else {
+                    res.status(401).json({
+                        message: "Login Faild"
+                    })
                 }
             }
-        }
-    )
+        })
 }
 
 export function isAdmin(req){

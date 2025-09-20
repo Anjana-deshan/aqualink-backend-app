@@ -2,27 +2,23 @@ import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema(
   {
+    productCode: {
+      type: String,
+      required: true,
+      unique: true, // ensures uniqueness
+      trim: true,
+    },
     title: {
       type: String,
       required: true,
       trim: true,
     },
     price: {
-      type: Number, // better to store as number (e.g., 25.00)
-      required: true,
-    },
-    stock: {
       type: Number,
       required: true,
-      min: 0,
-    },
-    status: {
-      type: String,
-      enum: ["In Stock", "Out of Stock"], // updated values
-      default: "In Stock",
     },
     image: {
-      type: String, // URL or path to image
+      type: String, 
       required: true,
     },
     views: {
@@ -32,6 +28,10 @@ const productSchema = new mongoose.Schema(
     orders: {
       type: Number,
       default: 0,
+    },
+    fishCode: {
+      type: String,
+      required: true,
     },
   },
   { timestamps: true }
