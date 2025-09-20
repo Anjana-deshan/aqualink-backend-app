@@ -181,4 +181,37 @@ export function deleteUser(req, res) {
             });
         }
     );
+  
+}
+
+// Get current logged-in user
+export function getCurrentUser(req, res) {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  User.findOne({ email: req.user.email })
+    .then((user) => {
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({
+        user: {
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          phone: user.phone || "",
+          location: user.location || "",
+          bio: user.bio || "",
+          image: user.image,
+          createdAt: user.createdAt,
+        },
+      });
+    })
+    .catch((error) => {
+      console.error("Error fetching current user:", error);
+      res.status(500).json({ message: "Failed to fetch user", error: error.message });
+    });
 }
