@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import cors from "cors"
 import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
+import imageRoutes from './routes/imageRoutes.js';
 
 const app = express()
 
@@ -53,6 +54,7 @@ mongoose.connect(connectionString).then(
 app.use("/api/users", userRouter)
 app.use("/api/products", productRouter)
 app.use("/api/fishstocks", fishStockRouter)
+app.use('/api/images', imageRoutes);
 
 app.listen(5000,
     ()=>{
