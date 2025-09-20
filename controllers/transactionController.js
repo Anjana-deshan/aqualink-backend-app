@@ -2,13 +2,15 @@
 import Transaction from "../Models/Transaction.js";
 
 export const create = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
-    const tx = await Transaction.create({ ...req.body });
+    const tx = await Transaction.create({ ...req.body, createdByRole: "owner" });
     res.status(201).json(tx);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
 export const list = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const { from, to, type, q } = req.query;
     const filter = { deletedAt: null };
@@ -30,6 +32,7 @@ export const list = async (req, res) => {
 };
 
 export const getOne = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const item = await Transaction.findById(req.params.id);
     if (!item || item.deletedAt) return res.sendStatus(404);
@@ -38,6 +41,7 @@ export const getOne = async (req, res) => {
 };
 
 export const update = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const item = await Transaction.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     res.json(item);
@@ -45,6 +49,7 @@ export const update = async (req, res) => {
 };
 
 export const remove = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     await Transaction.findByIdAndUpdate(req.params.id, { $set: { deletedAt: new Date() } });
     res.sendStatus(204);
@@ -52,6 +57,7 @@ export const remove = async (req, res) => {
 };
 
 export const summaryTotals = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const txs = await Transaction.find({ deletedAt: null }).lean();
     const income = txs.filter(t => t.type === "CR").reduce((a, b) => a + b.amount, 0);

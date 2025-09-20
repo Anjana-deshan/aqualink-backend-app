@@ -13,6 +13,7 @@ function calc({ basicSalary, allowances = 0, otHoursWeekday = 0, otHoursHoliday 
 }
 
 export const create = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const {
       staffId, staffName, periodStart, periodEnd,
@@ -43,6 +44,7 @@ export const create = async (req, res) => {
 };
 
 export const list = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const items = await SalaryRun.find({}).sort({ createdAt: -1 }).lean();
     res.json(items);
@@ -50,6 +52,7 @@ export const list = async (req, res) => {
 };
 
 export const getOne = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const item = await SalaryRun.findById(req.params.id);
     if (!item) return res.sendStatus(404);
@@ -58,6 +61,7 @@ export const getOne = async (req, res) => {
 };
 
 export const update = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     const item = await SalaryRun.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     res.json(item);
@@ -65,6 +69,7 @@ export const update = async (req, res) => {
 };
 
 export const remove = async (req, res) => {
+  if (req.user?.role !== "owner") return res.sendStatus(403);
   try {
     await SalaryRun.findByIdAndDelete(req.params.id);
     res.sendStatus(204);
