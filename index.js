@@ -13,6 +13,7 @@ import fishInventoryRouter from "./routes/fishInventoryRouter.js";
 import transactionRouter from "./routes/transactionRouter.js";
 import salaryRouter from "./routes/salaryRouter.js";
 import paymentRouter from "./routes/paymentRouter.js";
+import financeRouter from "./routes/financeRouter.js";
 
 
 const app = express()
@@ -74,6 +75,7 @@ app.use('/api/fishinventory', fishInventoryRouter);
 app.use("/api/transactions", transactionRouter); // CRUD + /summary/totals
 app.use("/api/salaries", salaryRouter);          // payroll + auto DR transaction
 app.use("/api", paymentRouter);                  // /buyer/payments & /orders/:orderId/payments
+app.use("/api/finance", financeRouter);
 
 
 const PORT = process.env.PORT || 5000;

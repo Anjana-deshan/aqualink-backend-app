@@ -76,6 +76,22 @@ export function loginUser(req, res) {
         })
 }
 
+// LIST (NEW) – minimal fields for dropdown, optional ?role=Staff
+export async function listUsers(req, res) {
+  try {
+    const { role } = req.query;
+    const filter = {};
+    if (role) filter.role = role;
+    const users = await User.find(
+      filter,
+      "email firstName lastName role isBlocked"
+    ).lean();
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to fetch users", error: e.message });
+  }
+}
+
 export function isAdmin(req){
     if(req.user == null){
         return false;

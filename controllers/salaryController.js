@@ -1,6 +1,7 @@
 // controllers/salaryController.js
 import SalaryRun from "../Models/SalaryRun.js";
 import Transaction from "../Models/Transaction.js";
+import bus from "../utils/eventBus.js";
 
 function calc({ basicSalary, allowances = 0, otHoursWeekday = 0, otHoursHoliday = 0, epf = 0, etf = 0, loan = 0, tax = 0 }) {
   const daily = basicSalary / 28;
@@ -15,14 +16,14 @@ function calc({ basicSalary, allowances = 0, otHoursWeekday = 0, otHoursHoliday 
 export const create = async (req, res) => {
   try {
     const {
-      staffId, staffName, periodStart, periodEnd,
+      staffEmail, staffName, periodStart, periodEnd,
       basicSalary, allowances, otHoursWeekday, otHoursHoliday, epf, etf, loan, tax,
     } = req.body;
 
     const c = calc({ basicSalary, allowances, otHoursWeekday, otHoursHoliday, epf, etf, loan, tax });
 
     const run = await SalaryRun.create({
-      staffId, staffName, periodStart, periodEnd,
+      staffEmail, staffName, periodStart, periodEnd,
       basicSalary, allowances, otHoursWeekday, otHoursHoliday, epf, etf, loan, tax,
       dailySalary: c.daily, hourlySalary: c.hourly,
       otWeekdayAmt: c.otWeekdayAmt, otHolidayAmt: c.otHolidayAmt,
@@ -31,13 +32,14 @@ export const create = async (req, res) => {
 
     await Transaction.create({
       name: `Salary - ${staffName}`,
-      description: `Payroll ${new Date(periodStart).toLocaleDateString()} – ${new Date(periodEnd).toLocaleDateString()}`,
+      description: `Payroll ${new Date(periodStart).toLocaleDateString()} – ${new Date(periodEnd).toLocaleDateString()} (${staffEmail})`,
       amount: run.netSalary,
       type: "DR",
-      staffId,
+      staffId: null,
       date: new Date(periodEnd),
     });
 
+    bus.emit("finance:update");
     res.status(201).json(run);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
@@ -60,6 +62,7 @@ export const getOne = async (req, res) => {
 export const update = async (req, res) => {
   try {
     const item = await SalaryRun.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+    bus.emit("finance:update");
     res.json(item);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
@@ -67,6 +70,7 @@ export const update = async (req, res) => {
 export const remove = async (req, res) => {
   try {
     await SalaryRun.findByIdAndDelete(req.params.id);
+    bus.emit("finance:update");
     res.sendStatus(204);
   } catch (e) { res.status(400).json({ error: e.message }); }
 };
