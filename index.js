@@ -8,6 +8,7 @@ import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
 import imageRoutes from './routes/imageRoutes.js';
 import fishInventoryRouter from "./routes/fishInventoryRouter.js";
+import userRoutes from "./routes/userRouter.js";
 
 // NEW finance routers (create these files as shown earlier, and export default router)
 import transactionRouter from "./routes/transactionRouter.js";
