@@ -16,6 +16,10 @@ import salaryRouter from "./routes/salaryRouter.js";
 import paymentRouter from "./routes/paymentRouter.js";
 import financeRouter from "./routes/financeRouter.js";
 
+// NEW: Cart + Orders
+import cartRouter from "./routes/cartRoutes.js";
+import orderRouter from "./routes/orderRoutes.js";
+
 
 const app = express()
 
@@ -77,6 +81,10 @@ app.use("/api/transactions", transactionRouter); // CRUD + /summary/totals
 app.use("/api/salaries", salaryRouter);          // payroll + auto DR transaction
 app.use("/api", paymentRouter);                  // /buyer/payments & /orders/:orderId/payments
 app.use("/api/finance", financeRouter);
+
+// Cart + Orders
+app.use("/api/cart", cartRouter);
+app.use("/api/orders", orderRouter);
 
 
 const PORT = process.env.PORT || 5000;
