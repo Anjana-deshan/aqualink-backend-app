@@ -9,30 +9,35 @@ reportRouter.get("/report", async (req, res) => {
   try {
     const users = await User.find().lean();
 
-    // Create PDF in landscape for more space
+    // Create PDF in landscape
     const doc = new PDFDocument({ margin: 30, size: "A3", layout: "landscape" });
 
     const filename = "User_Management_Report.pdf";
     res.setHeader("Content-disposition", `attachment; filename=${filename}`);
     res.setHeader("Content-type", "application/pdf");
 
+    // Title
     doc.fontSize(20).text("User Management Report", { align: "center" });
     doc.moveDown(2);
 
     // Table setup
-    const tableTop = doc.y;
     const rowHeight = 25;
+    const colWidths = [80, 120, 120, 200, 100, 80, 120]; // column widths
+    const tableWidth = colWidths.reduce((a, b) => a + b, 0); // total table width
 
-    // Adjusted column widths (fit perfectly)
-    const colWidths = [80, 120, 120, 200, 100, 80, 120];
+    // Center table horizontally
+    const startX = (doc.page.width - tableWidth) / 2;
+    const tableTop = doc.y;
+
+    // Column positions
     const colPositions = [];
     colWidths.reduce((acc, width) => {
       colPositions.push(acc);
       return acc + width;
-    }, 30); // start X = 30
+    }, startX);
 
-    // Table header
-    doc.fontSize(12).fillColor("white").rect(30, tableTop, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill("#1E3A8A"); // Blue header
+    // Table header with blue background
+    doc.fontSize(12).fillColor("white").rect(startX, tableTop, tableWidth, rowHeight).fill("#1E3A8A");
     const headers = ["User ID", "First Name", "Last Name", "Email", "Role", "Blocked", "Created At"];
     headers.forEach((text, i) => {
       doc.fillColor("white").text(text, colPositions[i] + 5, tableTop + 7, { width: colWidths[i] - 10 });
@@ -42,7 +47,7 @@ reportRouter.get("/report", async (req, res) => {
 
     users.forEach((user, index) => {
       // Alternating row colors
-      doc.rect(30, y, colWidths.reduce((a, b) => a + b, 0), rowHeight).fill(index % 2 === 0 ? "#E0F2FE" : "#ffffff");
+      doc.rect(startX, y, tableWidth, rowHeight).fill(index % 2 === 0 ? "#E0F2FE" : "#ffffff");
 
       doc.fillColor("black");
 
