@@ -6,6 +6,7 @@ import cors from "cors";
 
 // Routers
 import userRouter from "./routes/userRouter.js";
+import reportRouter from "./routes/reportRouter.js";
 import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
 import imageRoutes from "./routes/imageRoutes.js";
@@ -65,6 +66,7 @@ mongoose
 
 // ---------- Routes ----------
 app.use("/api/users", userRouter);
+app.use("/api/users", reportRouter);
 app.use("/api/products", productRouter);
 app.use("/api/fishstocks", fishStockRouter);
 app.use("/api/images", imageRoutes);
