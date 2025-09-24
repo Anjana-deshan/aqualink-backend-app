@@ -60,6 +60,23 @@ app.use(
     }    
 );
 
+// Disable ETag globally (prevents 304 on conditional requests)
+app.set('etag', false);
+
+// Or, selectively disable cache on the endpoints the PDF calls:
+app.use((req, res, next) => {
+  const noStorePaths = [
+    '/api/finance/overview',
+    '/api/users',
+    '/api/transactions',
+    '/api/buyer/payments',
+  ];
+  if (req.method === 'GET' && noStorePaths.includes(req.path)) {
+    res.set('Cache-Control', 'no-store'); // always fresh
+  }
+  next();
+});
+
 const connectionString = "mongodb+srv://admin:123@cluster0.yg47z6r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 mongoose
