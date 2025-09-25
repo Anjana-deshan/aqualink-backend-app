@@ -66,22 +66,6 @@ mongoose
     process.exit(1);
   });
 
-<<<<<<< Updated upstream
-// ---------- Routes ----------
-app.use("/api/users", userRouter);
-app.use("/api/users", reportRouter);
-app.use("/api/products", productRouter);
-app.use("/api/fishstocks", fishStockRouter);
-app.use("/api/images", imageRoutes);
-app.use("/api/fishinventory", fishInventoryRouter);
-=======
-app.use("/api/users", userRouter);
-app.use("/api/users", reportRouter);
-app.use("/api/products", productRouter)
-app.use("/api/fishstocks", fishStockRouter);
-app.use('/api/images', imageRoutes);
-app.use('/api/fishinventory', fishInventoryRouter);
->>>>>>> Stashed changes
 
 // Finance
 app.use("/api/transactions", transactionRouter);
