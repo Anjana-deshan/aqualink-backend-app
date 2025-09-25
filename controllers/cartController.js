@@ -1,114 +1,93 @@
-// controllers/cartController.js
-import mongoose from "mongoose";
 import Cart from "../Models/Cart.js";
+import Product from "../Models/product.js";
 
-/** Prefer URL param for GETs so /api/cart/guest works reliably */
-const resolveUserId = (req, preferParam = false) => {
-  if (preferParam && req.params?.userId) return String(req.params.userId);
-  return (
-    req.body?.userId ||
-    req.params?.userId ||
-    req.user?.buyerId ||
-    req.user?._id ||
-    req.header("x-buyer-id") ||
-    "guest"
-  );
-};
+// Add item
 
-/**
- * POST /api/cart/add
- * Body: { userId?: string, productId: string, quantity?: number }
- */
 export const addToCart = async (req, res) => {
   try {
-    console.log("📩 POST /api/cart/add", req.body);
-    const userId = resolveUserId(req);
-    const rawProductId = req.body?.productId;
-    const qty = Number(req.body?.quantity ?? 1);
+    const { email, productId, quantity } = req.body;
 
-    if (!rawProductId) {
-      console.error("❌ addToCart: Missing productId");
-      return res.status(400).json({ message: "Missing productId" });
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
     }
-    const productId = String(rawProductId);
-    const quantity = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 1;
 
-    let cart = await Cart.findOne({ userId });
-    if (!cart) cart = new Cart({ userId, items: [] });
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
 
-    const idx = cart.items.findIndex((i) => String(i.productId) === productId);
-    if (idx > -1) cart.items[idx].quantity += quantity;
-    else cart.items.push({ productId, quantity });
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    const qty = Math.max(1, Number(quantity) || 1); // ✅ always at least 1
+
+    let cart = await Cart.findOne({ userEmail: email });
+
+    if (!cart) {
+      cart = new Cart({
+        userEmail: email,
+        items: [{ product: productId, quantity: qty }],
+      });
+    } else {
+      const idx = cart.items.findIndex(
+        (item) => item.product.toString() === productId
+      );
+
+      if (idx > -1) {
+        cart.items[idx].quantity += qty;
+      } else {
+        cart.items.push({ product: productId, quantity: qty });
+      }
+    }
 
     await cart.save();
-
-    const populated = await Cart.findById(cart._id)
-      .populate("items.productId") // Model name MUST be "Product"
-      .lean();
-
-    return res.status(200).json(populated);
+    res.status(200).json(cart);
   } catch (err) {
-    console.error("❌ addToCart error:", err);
-    return res
-      .status(500)
-      .json({ message: "Error adding to cart", error: err?.message || String(err) });
+    console.error("addToCart error:", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * GET /api/cart/:userId
- * Returns the cart (or empty) for provided userId.
- * This version SELF-REPAIRS bad productId entries to avoid 500s.
- */
+
+// Get cart
 export const getCart = async (req, res) => {
-  const userId = resolveUserId(req, true); // force param
-  console.log("📩 GET /api/cart/:userId →", userId);
-
   try {
-    // 1) Load raw cart without populate
-    let cart = await Cart.findOne({ userId }).lean();
-
-    if (!cart) {
-      // No cart yet — return empty shape
-      return res.status(200).json({ userId, items: [] });
-    }
-
-    // 2) Validate each item.productId is a valid ObjectId (string accepted)
-    const validItems = (cart.items || []).filter((it) => {
-      const idStr = String(it.productId || "");
-      const ok = mongoose.isValidObjectId(idStr);
-      if (!ok) console.warn("⚠️ Removing invalid productId from cart:", idStr);
-      return ok;
-    });
-
-    // If we removed any invalid items, persist the fix
-    if (validItems.length !== (cart.items || []).length) {
-      await Cart.updateOne({ _id: cart._id }, { $set: { items: validItems } });
-      cart.items = validItems;
-    }
-
-    // 3) Re-load and populate safely
-    const populated = await Cart.findById(cart._id)
-      .populate("items.productId") // requires model name "Product"
-      .lean();
-
-    // 4) Some products may be missing (deleted). Filter nulls so UI doesn't crash.
-    const safeItems = (populated?.items || []).filter((it) => {
-      const ok = !!it.productId;
-      if (!ok) console.warn("⚠️ Removing missing product from cart (was deleted?)");
-      return ok;
-    });
-
-    // If we removed null-populated items, persist the fix
-    if (safeItems.length !== (populated?.items || []).length) {
-      await Cart.updateOne({ _id: cart._id }, { $set: { items: safeItems.map(({ productId, quantity }) => ({ productId, quantity })) } });
-    }
-
-    return res.status(200).json({ ...populated, items: safeItems });
+    const { email } = req.params;
+    const cart = await Cart.findOne({ userEmail: email }).populate("items.product");
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    res.json(cart);
   } catch (err) {
-    console.error("❌ getCart error:", err);
-    return res
-      .status(500)
-      .json({ message: "Error fetching cart", error: err?.message || String(err) });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Remove item
+export const removeFromCart = async (req, res) => {
+  try {
+    const { email, productId } = req.body;
+    const cart = await Cart.findOne({ userEmail: email });
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    cart.items = cart.items.filter((i) => i.product.toString() !== productId);
+    await cart.save();
+    res.json(cart);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Clear cart
+export const clearCart = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cart = await Cart.findOneAndUpdate(
+      { userEmail: email },
+      { $set: { items: [] } },
+      { new: true }
+    );
+    res.json(cart);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

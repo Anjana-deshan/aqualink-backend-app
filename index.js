@@ -8,15 +8,10 @@ import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
 import imageRoutes from './routes/imageRoutes.js';
 import fishInventoryRouter from "./routes/fishInventoryRouter.js";
-import userRoutes from "./routes/userRouter.js";
-
-// NEW finance routers (create these files as shown earlier, and export default router)
 import transactionRouter from "./routes/transactionRouter.js";
 import salaryRouter from "./routes/salaryRouter.js";
 import paymentRouter from "./routes/paymentRouter.js";
 import financeRouter from "./routes/financeRouter.js";
-
-// NEW: Cart + Orders
 import cartRouter from "./routes/cartRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 
@@ -51,9 +46,9 @@ app.use(
             )
         }
 
-        if (!req.user) req.user = {};
-        if (!req.user.role) req.user.role = req.header("x-role") || "owner"; // 'owner' | 'buyer'
-        if (!req.user.buyerId) req.user.buyerId = req.header("x-buyer-id") || null;
+        // if (!req.user) req.user = {};
+        // if (!req.user.role) req.user.role = req.header("x-role") || "owner"; // 'owner' | 'buyer'
+        // if (!req.user.buyerId) req.user.buyerId = req.header("x-buyer-id") || null;
 
 
         next()

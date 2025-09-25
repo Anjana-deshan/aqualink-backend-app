@@ -1,96 +1,83 @@
-// controllers/orderController.js
-import mongoose from "mongoose";
-import Cart from "../Models/Cart.js";
 import Order from "../Models/Order.js";
+import Cart from "../Models/Cart.js";
 
-const resolveUserId = (req) =>
-  req.body?.userId ||
-  req.user?.buyerId ||
-  req.user?._id ||
-  req.header("x-buyer-id") ||
-  "guest";
-
-/**
- * POST /api/orders/checkout
- */
-export const checkout = async (req, res) => {
+// Place order
+export const placeOrder = async (req, res) => {
   try {
-    const userId = resolveUserId(req);
-    console.log("📩 POST /api/orders/checkout →", userId);
+    const { email, shippingAddress, paymentMethod } = req.body;
 
-    // 1) Load the user's cart with product info
-    let cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cart = await Cart.findOne({ userEmail: email }).populate("items.product");
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
-    // 2) Filter only items with valid populated product
-    const items = (cart.items || [])
-      .filter((item) => {
-        if (!item.productId?._id) {
-          console.warn("⚠️ Skipping invalid or deleted product in cart:", item);
-          return false;
-        }
-        return true;
-      })
-      .map((item) => {
-        const price = Number(item.productId.price ?? 0);
-        const qty = Number(item.quantity ?? 1);
-        return {
-          productId: item.productId._id,
-          quantity: qty > 0 ? qty : 1,
-          price,
-        };
-      });
+    const orderItems = cart.items.map((item) => ({
+      product: item.product._id,
+      title: item.product.title,
+      price: item.product.price,
+      quantity: item.quantity,
+    }));
 
-    if (items.length === 0) {
-      return res.status(400).json({ message: "Cart had no valid products" });
-    }
+    const totalAmount = orderItems.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0
+    );
 
-    // 3) Calculate totals
-    const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-    // 4) Create order
-    const order = new Order({ userId, items, total, status: "Pending" });
-    await order.save();
-
-    // 5) Clear the cart
-    await Cart.findOneAndDelete({ userId });
-
-    // 6) Return populated order
-    const populated = await Order.findById(order._id).populate("items.productId");
-    return res.status(201).json(populated);
-  } catch (err) {
-    console.error("❌ checkout error:", err);
-    return res.status(500).json({
-      message: "Checkout failed",
-      error: err?.message || String(err),
+    const order = new Order({
+      userEmail: email,
+      items: orderItems,
+      totalAmount,
+      shippingAddress,
+      payment: {
+        method: paymentMethod || "cash_on_delivery",
+      },
     });
+
+    await order.save();
+    cart.items = [];
+    await cart.save();
+
+    res.status(201).json(order);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * GET /api/orders/:userId
- */
-export const getOrders = async (req, res) => {
+// User orders
+export const getUserOrders = async (req, res) => {
   try {
-    const userId =
-      req.params?.userId ||
-      req.user?.buyerId ||
-      req.user?._id ||
-      req.header("x-buyer-id") ||
-      "guest";
-
-    const orders = await Order.find({ userId })
-      .sort({ createdAt: -1 })
-      .populate("items.productId");
-
-    return res.status(200).json(orders);
+    const { email } = req.params;
+    const orders = await Order.find({ userEmail: email }).sort({ createdAt: -1 });
+    res.json(orders);
   } catch (err) {
-    console.error("❌ getOrders error:", err);
-    return res.status(500).json({
-      message: "Error fetching orders",
-      error: err?.message || String(err),
-    });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// All orders
+export const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update status
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    order.status = status;
+    await order.save();
+
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

@@ -1,33 +1,29 @@
-// Models/Cart.js
 import mongoose from "mongoose";
+
+const cartItemSchema = new mongoose.Schema({
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    min: 1,
+    default: 1,
+  },
+});
 
 const cartSchema = new mongoose.Schema(
   {
-    userId: {
+    userEmail: {
       type: String,
-      required: true, // can be actual userId or "guest"
+      required: true,
     },
-    items: [
-      {
-        productId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Product", // must match your Product model name
-          required: true,
-        },
-        quantity: {
-          type: Number,
-          default: 1,
-          min: 1,
-        },
-      },
-    ],
+    items: [cartItemSchema],
   },
   { timestamps: true }
 );
-
-// Ensure we don’t accidentally create a bad index
-// This prevents Mongoose from trying to auto-create outdated indexes
-cartSchema.set("autoIndex", true);
 
 const Cart = mongoose.model("Cart", cartSchema);
 export default Cart;
