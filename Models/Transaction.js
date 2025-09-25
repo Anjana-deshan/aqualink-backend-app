@@ -1,23 +1,32 @@
-// Models/Transaction.js
 import mongoose from "mongoose";
 
 const TransactionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    description: { type: String },
-    amount: { type: Number, required: true, min: 0 },
+    description: { type: String, default: "" },
+
+    // Amount in Rs
+    amount: { type: Number, required: true, default: 0 },
+
+    // CR = income, DR = expense
     type: { type: String, enum: ["CR", "DR"], required: true },
-    date: { type: Date, default: Date.now },
 
-    orderId: { type: String },
-    staffId: { type: String },
+    /**
+     * 'date' = the date the transaction happened (this is already used in your UI)
+     * Keep this field name so the existing list/sorting/display don't change.
+     */
+    date: { type: Date, required: true },
 
-    createdByRole: { type: String, default: "owner" },
+    /**
+     * NEW: recordedAt = the date/time the transaction was recorded/updated in the site.
+     * (Shown as the second calendar in the form; defaults to "now" if not provided.)
+     */
+    recordedAt: { type: Date, default: () => new Date() },
+
+    // Soft delete support
     deletedAt: { type: Date, default: null },
   },
-  { timestamps: true }
+  { timestamps: true } // createdAt / updatedAt
 );
-
-TransactionSchema.index({ name: "text", description: "text" });
 
 export default mongoose.model("Transaction", TransactionSchema);
