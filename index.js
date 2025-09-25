@@ -17,8 +17,6 @@ import transactionRouter from "./routes/transactionRouter.js";
 import salaryRouter from "./routes/salaryRouter.js";
 import paymentRouter from "./routes/paymentRouter.js";
 import financeRouter from "./routes/financeRouter.js";
-import reportRouter from "./routes/reportRouter.js";
-
 
 // NEW: Cart + Orders
 import cartRouter from "./routes/cartRoutes.js";
@@ -66,7 +64,6 @@ mongoose
     process.exit(1);
   });
 
-<<<<<<< Updated upstream
 // ---------- Routes ----------
 app.use("/api/users", userRouter);
 app.use("/api/users", reportRouter);
@@ -74,14 +71,6 @@ app.use("/api/products", productRouter);
 app.use("/api/fishstocks", fishStockRouter);
 app.use("/api/images", imageRoutes);
 app.use("/api/fishinventory", fishInventoryRouter);
-=======
-app.use("/api/users", userRouter);
-app.use("/api/users", reportRouter);
-app.use("/api/products", productRouter)
-app.use("/api/fishstocks", fishStockRouter);
-app.use('/api/images', imageRoutes);
-app.use('/api/fishinventory', fishInventoryRouter);
->>>>>>> Stashed changes
 
 // Finance
 app.use("/api/transactions", transactionRouter);
