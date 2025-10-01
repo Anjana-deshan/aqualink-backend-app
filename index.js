@@ -4,12 +4,14 @@ import mongoose from "mongoose";
 import userRouter from "./routes/userRouter.js";
 import jwt from "jsonwebtoken";
 import cors from "cors"
+import dotenv from "dotenv";
 import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
 import imageRoutes from './routes/imageRoutes.js';
 import fishInventoryRouter from "./routes/fishInventoryRouter.js";
 import userRoutes from "./routes/userRouter.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import inventoryHistoryRoutes from "./routes/inventoryHistoryRoutes.js";
 
 // NEW finance routers (create these files as shown earlier, and export default router)
 import transactionRouter from "./routes/transactionRouter.js";
@@ -21,7 +23,10 @@ import financeRouter from "./routes/financeRouter.js";
 import cartRouter from "./routes/cartRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 
+// Inventory History
+import inventoryHistoryRouter from "./routes/inventoryHistoryRoutes.js";
 
+dotenv.config();
 const app = express()
 
 // ---------- Middlewares ----------
@@ -79,6 +84,7 @@ app.use('/api/images', imageRoutes);
 //Inventory
 app.use('/api/fishinventory', fishInventoryRouter);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/inventory-history", inventoryHistoryRoutes);
 
 // Finance:
 app.use("/api/transactions", transactionRouter); // CRUD + /summary/totals
@@ -89,6 +95,9 @@ app.use("/api/finance", financeRouter);
 // Cart + Orders
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+
+// Inventory History
+app.use("/api/inventory-history", inventoryHistoryRouter);
 
 
 const PORT = process.env.PORT || 5000;
