@@ -20,6 +20,9 @@ import financeRouter from "./routes/financeRouter.js";
 import cartRouter from "./routes/cartRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 
+// NEW: Feedback
+import feedbackRouter from "./routes/feedbackRouter.js";
+
 
 const app = express()
 
@@ -85,6 +88,9 @@ app.use("/api/finance", financeRouter);
 // Cart + Orders
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+
+// Feedback
+app.use("/api/feedback", feedbackRouter);
 
 
 const PORT = process.env.PORT || 5000;
