@@ -1,5 +1,5 @@
 import express from 'express';
-import { addFeedback, getMyFeedback, getAllFeedback, updateFeedbackStatus } from '../controllers/feedbackController.js';
+import { addFeedback, getMyFeedback, getAllFeedback, updateFeedbackStatus, deleteFeedback, toggleTestimonial, getTestimonials } from '../controllers/feedbackController.js';
 
 const feedbackRouter = express.Router();
 
@@ -17,8 +17,13 @@ const requireAuth = (req, res, next) => {
 feedbackRouter.post("/add", requireAuth, addFeedback);
 feedbackRouter.get("/my-feedback", requireAuth, getMyFeedback);
 
+// Public testimonials route (no authentication required)
+feedbackRouter.get("/testimonials", getTestimonials);
+
 // Admin routes (require authentication + admin role)
 feedbackRouter.get("/all", requireAuth, getAllFeedback);
 feedbackRouter.put("/:feedbackId/status", requireAuth, updateFeedbackStatus);
+feedbackRouter.delete("/:feedbackId", requireAuth, deleteFeedback);
+feedbackRouter.put("/:feedbackId/testimonial", requireAuth, toggleTestimonial);
 
 export default feedbackRouter;

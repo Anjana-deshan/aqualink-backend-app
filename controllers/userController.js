@@ -12,7 +12,8 @@ export function createUser(req,res){
             email : req.body.email,
             firstName : req.body.firstName,
             lastName : req.body.lastName,
-            password : hashedPassword
+            password : hashedPassword,
+            role : req.body.role || "User"
         }
     )
 
@@ -53,6 +54,7 @@ export function loginUser(req, res) {
                 if (isPasswordMatching) {
                     const token = jwt.sign(
                         {
+                            _id: user._id,
                             email: user.email,
                             firstName: user.firstName,
                             lastName: user.lastName,

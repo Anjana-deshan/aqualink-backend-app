@@ -41,15 +41,15 @@ export const addFeedback = async (req, res) => {
     if (feedback.length < 10) {
       console.error("❌ addFeedback: Feedback too short");
       return res.status(400).json({ 
-        message: "Feedback must be at least 10 characters long." 
+        message: "Please provide at least 10 characters of feedback." 
       });
     }
 
     // Validate rating if provided
-    if (rating && (rating < 1 || rating > 5 || !Number.isInteger(Number(rating)))) {
+    if (rating && (Number(rating) < 1 || Number(rating) > 5)) {
       console.error("❌ addFeedback: Invalid rating");
       return res.status(400).json({ 
-        message: "Rating must be an integer between 1 and 5." 
+        message: "Rating must be between 1 and 5." 
       });
     }
 
@@ -62,13 +62,17 @@ export const addFeedback = async (req, res) => {
       });
     }
 
+    // Generate unique feedback ID
+    const feedbackID = `FB${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
     // Create new feedback
     const newFeedback = new Feedback({
+      feedbackID: feedbackID,
       userId: req.user._id,
       name: name.trim(),
       email: email.trim().toLowerCase(),
       feedback: feedback.trim(),
-      rating: rating ? Number(rating) : null,
+      rating: rating || null,
       status: "pending"
     });
 
@@ -160,12 +164,12 @@ export const getAllFeedback = async (req, res) => {
       });
     }
 
-    // Check if user has admin privileges (adjust role check based on your system)
+    // Check if user has admin/owner privileges
     const user = await User.findById(req.user._id);
-    if (!user || (user.role !== "Admin" && user.role !== "owner")) {
+    if (!user || (user.role !== "Admin" && user.role !== "owner" && user.role !== "Owner")) {
       console.error("❌ getAllFeedback: Insufficient permissions");
       return res.status(403).json({ 
-        message: "Access denied. Admin privileges required." 
+        message: "Access denied. Admin/Owner privileges required." 
       });
     }
 
@@ -191,6 +195,151 @@ export const getAllFeedback = async (req, res) => {
 };
 
 /**
+ * DELETE /api/feedback/:feedbackId (Admin only)
+ * Deletes a feedback
+ * Requires: Admin role
+ */
+export const deleteFeedback = async (req, res) => {
+  try {
+    console.log("📩 DELETE /api/feedback/:feedbackId", req.params.feedbackId);
+    
+    // Check if user is authenticated and is admin/owner
+    if (!req.user || !req.user._id) {
+      console.error("❌ deleteFeedback: User not authenticated");
+      return res.status(401).json({ 
+        message: "Authentication required." 
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user || (user.role !== "Admin" && user.role !== "owner" && user.role !== "Owner")) {
+      console.error("❌ deleteFeedback: Insufficient permissions");
+      return res.status(403).json({ 
+        message: "Access denied. Admin/Owner privileges required." 
+      });
+    }
+
+    const { feedbackId } = req.params;
+
+    const deletedFeedback = await Feedback.findByIdAndDelete(feedbackId);
+
+    if (!deletedFeedback) {
+      console.error("❌ deleteFeedback: Feedback not found");
+      return res.status(404).json({ 
+        message: "Feedback not found." 
+      });
+    }
+
+    console.log("✅ Feedback deleted successfully");
+    
+    return res.status(200).json({
+      message: "Feedback deleted successfully"
+    });
+
+  } catch (err) {
+    console.error("❌ deleteFeedback error:", err);
+    return res.status(500).json({ 
+      message: "Error deleting feedback.", 
+      error: err?.message || String(err) 
+    });
+  }
+};
+
+/**
+ * PUT /api/feedback/:feedbackId/testimonial (Admin only)
+ * Toggles testimonial status
+ * Requires: Admin role
+ */
+export const toggleTestimonial = async (req, res) => {
+  try {
+    console.log("📩 PUT /api/feedback/:feedbackId/testimonial", req.params.feedbackId);
+    
+    // Check if user is authenticated and is admin/owner
+    if (!req.user || !req.user._id) {
+      console.error("❌ toggleTestimonial: User not authenticated");
+      return res.status(401).json({ 
+        message: "Authentication required." 
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user || (user.role !== "Admin" && user.role !== "owner" && user.role !== "Owner")) {
+      console.error("❌ toggleTestimonial: Insufficient permissions");
+      return res.status(403).json({ 
+        message: "Access denied. Admin/Owner privileges required." 
+      });
+    }
+
+    const { feedbackId } = req.params;
+    const { action } = req.body;
+
+    if (!action || !["add", "remove"].includes(action)) {
+      console.error("❌ toggleTestimonial: Invalid action");
+      return res.status(400).json({ 
+        message: "Invalid action. Must be 'add' or 'remove'." 
+      });
+    }
+
+    const isTestimonial = action === "add";
+    const updatedFeedback = await Feedback.findByIdAndUpdate(
+      feedbackId,
+      { isTestimonial, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedFeedback) {
+      console.error("❌ toggleTestimonial: Feedback not found");
+      return res.status(404).json({ 
+        message: "Feedback not found." 
+      });
+    }
+
+    console.log("✅ Feedback testimonial status updated successfully");
+    
+    return res.status(200).json({
+      message: `Feedback ${action === "add" ? "added to" : "removed from"} testimonials successfully`,
+      feedback: updatedFeedback
+    });
+
+  } catch (err) {
+    console.error("❌ toggleTestimonial error:", err);
+    return res.status(500).json({ 
+      message: "Error updating testimonial status.", 
+      error: err?.message || String(err) 
+    });
+  }
+};
+
+/**
+ * GET /api/feedback/testimonials
+ * Returns all testimonials (public endpoint)
+ */
+export const getTestimonials = async (req, res) => {
+  try {
+    console.log("📩 GET /api/feedback/testimonials");
+    
+    const testimonials = await Feedback.find({ isTestimonial: true })
+      .populate('userId', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .select('-__v')
+      .lean();
+
+    return res.status(200).json({
+      message: "Testimonials retrieved successfully",
+      testimonials: testimonials,
+      count: testimonials.length
+    });
+
+  } catch (err) {
+    console.error("❌ getTestimonials error:", err);
+    return res.status(500).json({ 
+      message: "Error retrieving testimonials.", 
+      error: err?.message || String(err) 
+    });
+  }
+};
+
+/**
  * PUT /api/feedback/:feedbackId/status (Admin only)
  * Updates feedback status
  * Requires: Admin role
@@ -208,10 +357,10 @@ export const updateFeedbackStatus = async (req, res) => {
     }
 
     const user = await User.findById(req.user._id);
-    if (!user || (user.role !== "Admin" && user.role !== "owner")) {
+    if (!user || (user.role !== "Admin" && user.role !== "owner" && user.role !== "Owner")) {
       console.error("❌ updateFeedbackStatus: Insufficient permissions");
       return res.status(403).json({ 
-        message: "Access denied. Admin privileges required." 
+        message: "Access denied. Admin/Owner privileges required." 
       });
     }
 

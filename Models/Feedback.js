@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const feedbackSchema = new mongoose.Schema(
     {
+        feedbackID: {
+            type: String,
+            unique: true,
+            sparse: true // This allows multiple null values
+        },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -22,7 +27,7 @@ const feedbackSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            maxLength: 300
+            maxLength: 200
         },
         rating: {
             type: Number,
@@ -34,6 +39,10 @@ const feedbackSchema = new mongoose.Schema(
             type: String,
             enum: ["pending", "reviewed", "responded"],
             default: "pending"
+        },
+        isTestimonial: {
+            type: Boolean,
+            default: false
         },
         createdAt: {
             type: Date,
