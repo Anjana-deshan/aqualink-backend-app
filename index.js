@@ -1,19 +1,27 @@
 import express from "express";
 import morgan from "morgan";
 import mongoose from "mongoose";
-import userRouter from "./routes/userRouter.js";
 import jwt from "jsonwebtoken";
-import cors from "cors"
+import cors from "cors";
+
+// Routers
+import userRouter from "./routes/userRouter.js";
+import reportRouter from "./routes/reportRouter.js";
 import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
-import imageRoutes from './routes/imageRoutes.js';
+import imageRoutes from "./routes/imageRoutes.js";
 import fishInventoryRouter from "./routes/fishInventoryRouter.js";
+
+// Finance routers
 import transactionRouter from "./routes/transactionRouter.js";
 import salaryRouter from "./routes/salaryRouter.js";
 import paymentRouter from "./routes/paymentRouter.js";
 import financeRouter from "./routes/financeRouter.js";
+
+// NEW: Cart + Orders
 import cartRouter from "./routes/cartRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
+
 // NEW: Feedback
 import feedbackRouter from "./routes/feedbackRouter.js";
 
@@ -62,7 +70,25 @@ mongoose
     process.exit(1);
   });
 
+  // Disable ETag globally (prevents 304 on conditional requests)
+app.set('etag', false);
+
+// Or, selectively disable cache on the endpoints the PDF calls:
+app.use((req, res, next) => {
+  const noStorePaths = [
+    '/api/finance/overview',
+    '/api/users',
+    '/api/transactions',
+    '/api/buyer/payments',
+  ];
+  if (req.method === 'GET' && noStorePaths.includes(req.path)) {
+    res.set('Cache-Control', 'no-store'); // always fresh
+  }
+  next();
+});
+
 app.use("/api/users", userRouter)
+app.use("/api/users", reportRouter);
 app.use("/api/products", productRouter)
 app.use("/api/fishstocks", fishStockRouter)
 app.use('/api/images', imageRoutes);
