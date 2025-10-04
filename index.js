@@ -11,6 +11,8 @@ import productRouter from "./routes/productRouter.js";
 import fishStockRouter from "./routes/fishStockRoutes.js";
 import imageRoutes from "./routes/imageRoutes.js";
 import fishInventoryRouter from "./routes/fishInventoryRouter.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import inventoryHistoryRoutes from "./routes/inventoryHistoryRoutes.js";
 
 // Finance routers
 import transactionRouter from "./routes/transactionRouter.js";
@@ -93,6 +95,8 @@ app.use("/api/products", productRouter)
 app.use("/api/fishstocks", fishStockRouter)
 app.use('/api/images', imageRoutes);
 app.use('/api/fishinventory', fishInventoryRouter);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/inventory-history", inventoryHistoryRoutes);
 
 // Finance:
 app.use("/api/transactions", transactionRouter); // CRUD + /summary/totals
