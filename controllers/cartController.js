@@ -55,7 +55,15 @@ export const getCart = async (req, res) => {
   try {
     const { email } = req.params;
     const cart = await Cart.findOne({ userEmail: email }).populate("items.product");
-    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    if (!cart) {
+      // Return empty cart structure instead of 404
+      return res.json({
+        userEmail: email,
+        items: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
     res.json(cart);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -67,7 +75,15 @@ export const removeFromCart = async (req, res) => {
   try {
     const { email, productId } = req.body;
     const cart = await Cart.findOne({ userEmail: email });
-    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    if (!cart) {
+      // Return empty cart structure if cart doesn't exist
+      return res.json({
+        userEmail: email,
+        items: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
 
     cart.items = cart.items.filter((i) => i.product.toString() !== productId);
     await cart.save();
@@ -87,7 +103,15 @@ export const updateQuantity = async (req, res) => {
     }
 
     const cart = await Cart.findOne({ userEmail: email });
-    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    if (!cart) {
+      // Return empty cart structure if cart doesn't exist
+      return res.json({
+        userEmail: email,
+        items: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
 
     const itemIndex = cart.items.findIndex(
       (item) => item.product.toString() === productId
