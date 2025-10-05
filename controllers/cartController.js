@@ -77,6 +77,40 @@ export const removeFromCart = async (req, res) => {
   }
 };
 
+// Update quantity
+export const updateQuantity = async (req, res) => {
+  try {
+    const { email, productId, quantity } = req.body;
+    
+    if (!email || !productId || quantity === undefined) {
+      return res.status(400).json({ message: "Email, productId, and quantity are required" });
+    }
+
+    const cart = await Cart.findOne({ userEmail: email });
+    if (!cart) return res.status(404).json({ message: "Cart not found" });
+
+    const itemIndex = cart.items.findIndex(
+      (item) => item.product.toString() === productId
+    );
+
+    if (itemIndex === -1) {
+      return res.status(404).json({ message: "Item not found in cart" });
+    }
+
+    if (quantity <= 0) {
+      // Remove item if quantity is 0 or negative
+      cart.items.splice(itemIndex, 1);
+    } else {
+      cart.items[itemIndex].quantity = quantity;
+    }
+
+    await cart.save();
+    res.json(cart);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // Clear cart
 export const clearCart = async (req, res) => {
   try {
