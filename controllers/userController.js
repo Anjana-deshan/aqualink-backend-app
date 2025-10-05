@@ -12,7 +12,8 @@ export function createUser(req,res){
             email : req.body.email,
             firstName : req.body.firstName,
             lastName : req.body.lastName,
-            password : hashedPassword
+            password : hashedPassword,
+            role : req.body.role || "User"
         }
     )
 
@@ -31,6 +32,15 @@ export function createUser(req,res){
     )
 }
 
+// Get all users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "-password"); // exclude password
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch users", error: err.message });
+  }
+};
 
 export function loginUser(req, res) {
     User.findOne({ email: req.body.email })
@@ -44,6 +54,7 @@ export function loginUser(req, res) {
                 if (isPasswordMatching) {
                     const token = jwt.sign(
                         {
+                            _id: user._id,
                             email: user.email,
                             firstName: user.firstName,
                             lastName: user.lastName,
@@ -74,6 +85,22 @@ export function loginUser(req, res) {
                 }
             }
         })
+}
+
+// LIST (NEW) – minimal fields for dropdown, optional ?role=Staff
+export async function listUsers(req, res) {
+  try {
+    const { role } = req.query;
+    const filter = {};
+    if (role) filter.role = role;
+    const users = await User.find(
+      filter,
+      "email firstName lastName role isBlocked"
+    ).lean();
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to fetch users", error: e.message });
+  }
 }
 
 export function isAdmin(req){

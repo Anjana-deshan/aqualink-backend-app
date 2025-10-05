@@ -3,8 +3,11 @@ import mongoose from "mongoose";
 
 const SalaryRunSchema = new mongoose.Schema(
   {
-    staffId: { type: String, required: true },
+    // CHANGED: store email + name; staffId optional for backward compatibility
+    staffEmail: { type: String, required: true },
     staffName: { type: String, required: true },
+    staffId: { type: String }, // no longer required
+
     periodStart: { type: Date, required: true },
     periodEnd: { type: Date, required: true },
 
