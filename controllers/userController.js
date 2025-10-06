@@ -43,48 +43,52 @@ export const getAllUsers = async (req, res) => {
 };
 
 export function loginUser(req, res) {
-    User.findOne({ email: req.body.email })
-        .then((user) => {
-            if (user == null) {
-                res.status(404).json({
-                    message: "User not Found"
-                })
-            } else {
-                const isPasswordMatching = bcrypt.compareSync(req.body.password, user.password)
-                if (isPasswordMatching) {
-                    const token = jwt.sign(
-                        {
-                            _id: user._id,
-                            email: user.email,
-                            firstName: user.firstName,
-                            lastName: user.lastName,
-                            role: user.role,
-                            isEmailVerified: user.isEmailVerified,
-                        },
-                        "jwt-secret-key"
-                    )
+  const { email, password } = req.body;
 
-                    res.json({
-                        message: "Login Successsfull",
-                        token: token,
-                        role: user.role,
-                        user: {
-                            email: user.email,
-                            firstName: user.firstName,
-                            lastName: user.lastName,
-                            role: user.role,
-                            isEmailVerified: user.isEmailVerified,
-                            createdAt: user.createdAt,
-                            // Add any other fields you want to send
-                        }
-                    })
-                } else {
-                    res.status(401).json({
-                        message: "Login Faild"
-                    })
-                }
-            }
-        })
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  User.findOne({ email }).then(user => {
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isPasswordMatching = bcrypt.compareSync(password, user.password);
+    if (!isPasswordMatching) {
+      return res.status(401).json({ message: "Login failed" });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
+      "jwt-secret-key",
+      { expiresIn: "7d" } // optional, adjust as needed
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+      role: user.role,
+      user: {
+        _id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
+    });
+  }).catch(err => {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  });
 }
 
 // LIST (NEW) – minimal fields for dropdown, optional ?role=Staff
@@ -206,3 +210,28 @@ export function deleteUser(req, res) {
         }
     );
 }
+
+export const changePassword = async (req, res) => {
+  try {
+    const { email, currentPassword, newPassword } = req.body;
+
+    if (!email || !currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Email, current password, and new password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(401).json({ message: "Current password is incorrect" });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
