@@ -81,6 +81,7 @@ export function loginUser(req, res) {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        isEmailVerified:user.isEmailVerified,
         role: user.role,
         createdAt: user.createdAt,
       },
